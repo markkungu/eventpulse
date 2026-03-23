@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and fill in values.
+# Never commit terraform.tfvars to git.
+
+aws_region   = "us-east-1"
+project      = "eventpulse"
+environment  = "production"
+ec2_key_name = "your-key-pair-name"    # Must exist in AWS console
+db_password  = "change-me-strong-password"
