@@ -1,12 +1,13 @@
 import logging
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.event import Event
-from app.schemas.event import EventCreate, EventQueued
+from app.schemas.event import EventCreate, EventQueued, EventResponse
 from app.tasks.process_event import process_event
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/events", tags=["events"])
 async def submit_event(body: EventCreate, db: AsyncSession = Depends(get_db)):
     """
     Accept an event, persist it as QUEUED, push to Celery for async processing.
-    Returns immediately with the event_id — do not wait for processing.
+    Returns immediately with the event_id — does not wait for processing.
     """
     event = Event(
         id=uuid4(),
@@ -30,7 +31,6 @@ async def submit_event(body: EventCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(event)
 
-    # Push to Celery queue — non-blocking
     process_event.delay(
         event_id=str(event.id),
         event_type=event.type,
@@ -40,3 +40,22 @@ async def submit_event(body: EventCreate, db: AsyncSession = Depends(get_db)):
 
     logger.info("Event %s queued (type=%s)", event.id, event.type)
     return EventQueued(event_id=event.id, status="queued")
+
+
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(event_id: UUID, db: AsyncSession = Depends(get_db)):
+    """
+    Fetch a processed event by its ID.
+    Returns 404 if the event does not exist.
+    """
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    event = result.scalar_one_or_none()
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    logger.info("Fetched event %s (status=%s)", event.id, event.status)
+    return event
