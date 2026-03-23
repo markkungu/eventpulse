@@ -1,0 +1,22 @@
+# Run Alembic migrations before deploying new app version.
+# Usage: kubectl apply -f k8s/jobs/migration-job.yaml
+#        kubectl wait --for=condition=complete --timeout=60s job/db-migrate
+#        kubectl delete job db-migrate
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: eventpulse:latest
+          command: ["python", "-m", "alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets

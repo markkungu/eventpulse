@@ -1,0 +1,36 @@
+# Extends docker-compose.yml with local monitoring.
+# Usage: make up-monitoring
+# Or: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+version: "3.9"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./k8s/monitoring/prometheus-config.yaml:/tmp/prom-config.yaml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./k8s/monitoring/prometheus-rules.yaml:/tmp/prom-rules.yaml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  grafana_data:
