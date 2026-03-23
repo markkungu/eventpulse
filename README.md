@@ -1,6 +1,15 @@
 # EventPulse — Production-Grade Event Processing Platform
 
 [![CI](https://github.com/markkungu/eventpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/markkungu/eventpulse/actions/workflows/ci.yml)
+[![Deploy](https://github.com/markkungu/eventpulse/actions/workflows/deploy.yml/badge.svg)](https://github.com/markkungu/eventpulse/actions/workflows/deploy.yml)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-k3s-326CE5?logo=kubernetes&logoColor=white)](https://k3s.io/)
+[![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![AWS](https://img.shields.io/badge/AWS-EC2%20%7C%20RDS%20%7C%20ECR-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
+[![Prometheus](https://img.shields.io/badge/Monitoring-Prometheus%20%2B%20Grafana-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 > A containerized, auto-scaling, monitored backend system simulating real production workloads.
 
