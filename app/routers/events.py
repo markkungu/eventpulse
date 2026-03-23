@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.metrics import events_received_total
 from app.models.event import Event
 from app.schemas.event import EventCreate, EventQueued, EventResponse
 from app.tasks.process_event import process_event
@@ -38,6 +39,7 @@ async def submit_event(body: EventCreate, db: AsyncSession = Depends(get_db)):
         payload=event.payload,
     )
 
+    events_received_total.labels(event_type=body.type).inc()
     logger.info("Event %s queued (type=%s)", event.id, event.type)
     return EventQueued(event_id=event.id, status="queued")
 
@@ -57,5 +59,4 @@ async def get_event(event_id: UUID, db: AsyncSession = Depends(get_db)):
             detail=f"Event {event_id} not found",
         )
 
-    logger.info("Fetched event %s (status=%s)", event.id, event.status)
     return event
