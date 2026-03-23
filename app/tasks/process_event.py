@@ -25,18 +25,17 @@ celery_app.conf.update(
 
 @celery_app.task(name="process_event", bind=True, max_retries=3)
 def process_event(self, event_id: str, event_type: str, source: str, payload: dict):
-    """
-    Process an event from the queue.
-    Writes result back to PostgreSQL via a sync DB call.
-    """
+    """Process an event from the queue and write result to PostgreSQL."""
     import asyncio
 
     from sqlalchemy import update
 
     from app.database import AsyncSessionLocal
+    from app.metrics import event_processing_duration_seconds, events_processed_total
     from app.models.event import Event, EventStatus
 
     logger.info("Processing event %s (type=%s)", event_id, event_type)
+    start = time.time()
 
     try:
         # Simulate processing work
@@ -53,17 +52,19 @@ def process_event(self, event_id: str, event_type: str, source: str, payload: di
                 await session.execute(
                     update(Event)
                     .where(Event.id == UUID(event_id))
-                    .values(
-                        status=EventStatus.PROCESSED,
-                        result=result,
-                    )
+                    .values(status=EventStatus.PROCESSED, result=result)
                 )
                 await session.commit()
 
         asyncio.run(_update())
-        logger.info("Event %s processed successfully", event_id)
+
+        duration = time.time() - start
+        event_processing_duration_seconds.observe(duration)
+        events_processed_total.labels(status="processed").inc()
+        logger.info("Event %s processed in %.2fs", event_id, duration)
         return result
 
     except Exception as exc:
+        events_processed_total.labels(status="failed").inc()
         logger.error("Failed to process event %s: %s", event_id, exc)
         raise self.retry(exc=exc, countdown=2**self.request.retries)
